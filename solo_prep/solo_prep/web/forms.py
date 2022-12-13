@@ -1,0 +1,90 @@
+from django import forms
+
+from solo_prep.web.models import Profile, Album
+
+
+class BaseProfileForms(forms.ModelForm):
+    class Meta:
+        model = Profile
+        fields = ('username', 'email', 'age')
+
+
+class ProfileCreateForms(BaseProfileForms):
+    pass
+
+
+class ProfileDeleteForms(BaseProfileForms):
+    def __int__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        #self.__set_hidden_fields()
+
+    def save(self, commit=True):
+        if commit:
+            Album.objects.all().delete() # we have to delete all of the profile-related albums
+            self.instance.delete()
+
+        return self.instance
+
+    #def __set_hidden_fields(self):
+        #for _, field in self.fields.items():
+            #field.widget = forms.HiddenInput()
+    class Meta:
+        model = Profile
+        fields = ()
+
+
+class AlbumBaseForms(forms.ModelForm):
+    class Meta:
+        model = Album
+        fields = '__all__'
+
+        widgets = {
+            'album_name': forms.TextInput(
+                attrs={
+                    'placeholder': 'Album Name',
+                },
+            ),
+            'artist': forms.TextInput(
+                attrs={
+                    'placeholder': 'Artist',
+                },
+            ),
+            'description': forms.Textarea(
+                attrs={
+                    'placeholder': 'Description',
+                },
+            ),
+            'image_url': forms.URLInput(
+                attrs={
+                    'placeholder': 'Image URL',
+                },
+            ),
+            'price': forms.NumberInput(
+                attrs={
+                    'placeholder': 'Price',
+                },
+            ),
+        }
+
+
+class AlbumCreateForms(AlbumBaseForms):
+    pass
+
+
+class AlbumEditForms(AlbumBaseForms):
+    pass
+
+
+class AlbumDeleteForms(AlbumBaseForms):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def save(self, commit=True):
+        if commit:
+            self.instance.delete()
+
+        return self.instance
+
+    def _disabled_fields(self):
+        for _, field in self.fields.items():
+            field.widget.attrs['readonly'] = 'readonly'
